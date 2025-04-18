@@ -1,0 +1,908 @@
+# CyberShield - O'zbek tilidagi zaiflik skaneri
+
+Frontend loyihasi quyidagi fayllardan iborat:
+
+## 1. index.html (Asosiy sahifa)
+```html
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberShield - O'zbek tilidagi zaiflik skaneri</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>CyberShield</span>
+                    </a>
+                </div>
+                <nav class="nav-menu">
+                    <ul>
+                        <li><a href="index.html" class="active">Asosiy</a></li>
+                        <li><a href="services.html">Xizmatlar</a></li>
+                        <li><a href="pricing.html">Narxlar</a></li>
+                        <li><a href="about.html">Biz haqimizda</a></li>
+                        <li><a href="contact.html">Aloqa</a></li>
+                    </ul>
+                </nav>
+                <div class="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content animate__animated animate__fadeIn">
+                <h1>Web saytingiz <span>xavfsizligini tekshiring</span></h1>
+                <p>O'zbek tilidagi zaiflik skaneri orqali web saytingizning xavfsizligini tekshiring va xakerlardan himoyalaning</p>
+                <div class="search-box">
+                    <input type="text" id="website-url" placeholder="Web sayt manzilini kiriting (https://...)">
+                    <button id="scan-btn" class="btn btn-primary">Tekshirishni boshlash</button>
+                </div>
+                <p class="example">Misol: https://example.uz</p>
+            </div>
+        </div>
+        <div class="hero-animation">
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>Nima uchun CyberShield?</h2>
+                <p>Web saytingiz xavfsizligini tekshirish uchun eng zamonaviy va qulay vosita</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-item animate__animated animate__fadeInUp">
+                    <div class="icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <h3>O'zbek tilidagi interfeys</h3>
+                    <p>To'liq o'zbek tilidagi interfeys va hisobotlar bilan ishlang. Texnik ma'lumotlarni tushunarli tilda o'qing.</p>
+                </div>
+
+                <div class="feature-item animate__animated animate__fadeInUp" data-wow-delay="0.2s">
+                    <div class="icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>Sun'iy intellekt tahlili</h3>
+                    <p>Scan natijalarini sun'iy intellekt tahlili orqali tushunarli tilda taqdim etish imkoniyati.</p>
+                </div>
+
+                <div class="feature-item animate__animated animate__fadeInUp" data-wow-delay="0.4s">
+                    <div class="icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Batafsil hisobotlar</h3>
+                    <p>Zaifliklar haqida batafsil ma'lumotlar va ularni bartaraf etish bo'yicha ko'rsatmalar.</p>
+                </div>
+
+                <div class="feature-item animate__animated animate__fadeInUp">
+                    <div class="icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h3>Tezkor skanerlash</h3>
+                    <p>Tezkor va samarali skanerlash algoritmlari orqali vaqtingizni tejang.</p>
+                </div>
+
+                <div class="feature-item animate__animated animate__fadeInUp" data-wow-delay="0.2s">
+                    <div class="icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3>Tarixni saqlash</h3>
+                    <p>Barcha scan natijalari tarixini saqlang va xavfsizlik o'zgarishlarini kuzating.</p>
+                </div>
+
+                <div class="feature-item animate__animated animate__fadeInUp" data-wow-delay="0.4s">
+                    <div class="icon">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <h3>Bulutli xizmat</h3>
+                    <p>Hech qanday o'rnatish talab qilinmaydi, faqat brauzer orqali ishlating.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-title">
+                <h2>Qanday ishlaydi?</h2>
+                <p>CyberShield xizmatidan foydalanish oson va qulay</p>
+            </div>
+
+            <div class="steps">
+                <div class="step-connector"></div>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Sayt manzilini kiriting</h3>
+                    <p>Web saytingiz URL manzilini kiritib tekshirishni boshlang</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Skanerlash jarayoni</h3>
+                    <p>Tizim avtomatik ravishda saytingizni tekshiradi</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Hisobot olish</h3>
+                    <p>Batafsil o'zbek tilidagi hisobotni ko'rib chiqing</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Muammolarni bartaraf etish</h3>
+                    <p>Ko'rsatmalarni o'qib zaifliklarni bartaraf eting</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Report Example Preview -->
+    <section class="report-example">
+        <div class="container">
+            <div class="section-title">
+                <h2>Namuna hisobot</h2>
+                <p>CyberShield hisoboti qanday ko'rinishda bo'lishini ko'ring</p>
+            </div>
+
+            <div class="report-preview animate__animated animate__fadeInUp">
+                <div class="report-header">
+                    <div class="report-title">
+                        <i class="fas fa-file-alt"></i>
+                        <h3>Zaiflik skaneri hisoboti</h3>
+                    </div>
+                    <div class="report-date">
+                        <span>Skanerlash sanasi: <b>15.04.2025</b></span>
+                    </div>
+                </div>
+                
+                <div class="report-body">
+                    <!-- Report content preview -->
+                    <div class="report-section">
+                        <h4>Sayt ma'lumotlari</h4>
+                        <div class="report-grid">
+                            <div class="report-item">
+                                <p class="label">URL manzil:</p>
+                                <p class="value">https://example.uz</p>
+                            </div>
+                            <div class="report-item">
+                                <p class="label">Server turi:</p>
+                                <p class="value">Nginx 1.18.0</p>
+                            </div>
+                            <div class="report-item">
+                                <p class="label">Operatsion tizim:</p>
+                                <p class="value">Ubuntu Linux</p>
+                            </div>
+                            <div class="report-item">
+                                <p class="label">Aniqlangan zaifliklar:</p>
+                                <p class="value">5 ta (2 ta yuqori, 3 ta o'rta darajali)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h4>Aniqlangan zaifliklar</h4>
+                        
+                        <div class="vulnerability">
+                            <div class="vuln-header">
+                                <div class="vuln-title">
+                                    <span class="vuln-icon high"></span>
+                                    <h5>SQL Injection zaiflik</h5>
+                                </div>
+                                <span class="vuln-severity high">Yuqori</span>
+                            </div>
+                            <div class="vuln-details">
+                                <div class="vuln-info">
+                                    <p class="label">Tavsif:</p>
+                                    <p>Login sahifasida SQL injection zaiflik aniqlandi. Bu orqali hacker login ma'lumotlarini chetlab o'tishi yoki ma'lumotlar bazasidan maxfiy ma'lumotlarni olishi mumkin.</p>
+                                </div>
+                                <div class="vuln-info">
+                                    <p class="label">Bartaraf etish yo'llari:</p>
+                                    <p>
+                                        1. Barcha foydalanuvchi kiritgan ma'lumotlarni tekshiring va tozalang.<br>
+                                        2. Parametrli so'rovlar (Prepared statements) yoki ORM texnologiyalaridan foydalaning.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vulnerability">
+                            <div class="vuln-header">
+                                <div class="vuln-title">
+                                    <span class="vuln-icon medium"></span>
+                                    <h5>Cross-Site Scripting (XSS) zaiflik</h5>
+                                </div>
+                                <span class="vuln-severity medium">O'rta</span>
+                            </div>
+                            <div class="vuln-details">
+                                <div class="vuln-info">
+                                    <p class="label">Tavsif:</p>
+                                    <p>Izohlar qoldirishga mo'ljallangan sahifada XSS zaiflik aniqlandi. Bu orqali zararli JavaScript kodlarni saytga kiritish mumkin.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h4>Xavfsizlik darajasi</h4>
+                        <div class="security-score">
+                            <div class="score-info">
+                                <span>Umumiy xavfsizlik bahosi</span>
+                                <span class="score-value">65%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 65%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-buttons">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-download"></i> Hisobotni yuklab olish
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="newsletter">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2>Yangiliklar va maslahatlar</h2>
+                <p>Eng so'nggi xavfsizlik yangiliklari va maslahatlarini olish uchun obuna bo'ling</p>
+                <div class="newsletter-form">
+                    <input type="email" placeholder="Elektron pochta manzilingiz">
+                    <button class="btn btn-secondary">Obuna bo'lish</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>CyberShield</span>
+                    <p>Web-saytlar xavfsizligi mutaxassisi</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Sahifalar</h4>
+                    <ul>
+                        <li><a href="index.html">Asosiy</a></li>
+                        <li><a href="services.html">Xizmatlar</a></li>
+                        <li><a href="pricing.html">Narxlar</a></li>
+                        <li><a href="about.html">Biz haqimizda</a></li>
+                        <li><a href="contact.html">Aloqa</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Resurslar</h4>
+                    <ul>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Yo'riqnomalar</a></li>
+                        <li><a href="#">Ko'p so'raladigan savollar</a></li>
+                        <li><a href="#">Qo'llanma</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Aloqa</h4>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> Toshkent sh., Amir Temur ko'chasi, 108-uy</li>
+                        <li><i class="fas fa-phone"></i> +998 71 123 45 67</li>
+                        <li><i class="fas fa-envelope"></i> info@cybershield.uz</li>
+                    </ul>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-telegram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 CyberShield. Barcha huquqlar himoyalangan.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</body>
+</html>
+```
+
+## 2. css/styles.css (Asosiy stillar fayli)
+```css
+/* Base Styles */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary-color: #1e40af;
+    --primary-dark: #1e3a8a;
+    --secondary-color: #eab308;
+    --gray-dark: #1f2937;
+    --gray-medium: #4b5563;
+    --gray-light: #f3f4f6;
+    --danger: #dc2626;
+    --warning: #ea580c;
+    --success: #16a34a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    line-height: 1.6;
+    color: var(--gray-dark);
+    background-color: #fff;
+    overflow-x: hidden;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+ul {
+    list-style: none;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    outline: none;
+}
+
+.btn-primary {
+    background-color: var(--secondary-color);
+    color: var(--gray-dark);
+}
+
+.btn-primary:hover {
+    background-color: #ca8a04;
+}
+
+.btn-secondary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: var(--primary-dark);
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.section-title h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: var(--gray-dark);
+}
+
+.section-title p {
+    font-size: 1.1rem;
+    color: var(--gray-medium);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Header Styles */
+.header {
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+}
+
+.logo a {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.logo i {
+    font-size: 1.8rem;
+    margin-right: 10px;
+}
+
+.nav-menu ul {
+    display: flex;
+}
+
+.nav-menu ul li {
+    margin-left: 30px;
+}
+
+.nav-menu ul li a {
+    font-weight: 500;
+    color: var(--gray-medium);
+    position: relative;
+    padding-bottom: 5px;
+}
+
+.nav-menu ul li a:hover,
+.nav-menu ul li a.active {
+    color: var(--primary-color);
+}
+
+.nav-menu ul li a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.nav-menu ul li a:hover::after,
+.nav-menu ul li a.active::after {
+    width: 100%;
+}
+
+.mobile-menu-btn {
+    display: none;
+    font-size: 1.5rem;
+    color: var(--gray-dark);
+    cursor: pointer;
+}
+
+/* Hero Section */
+.hero {
+    position: relative;
+    background: linear-gradient(to right, #1e3a8a, #1e40af);
+    padding: 100px 0;
+    color: white;
+    overflow: hidden;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 20px;
+}
+
+.hero h1 span {
+    color: var(--secondary-color);
+    display: block;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.search-box {
+    display: flex;
+    max-width: 600px;
+    margin: 0 auto;
+    gap: 10px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    outline: none;
+}
+
+.example {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.hero-animation {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.cube {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.05);
+    animation: cube 10s linear infinite;
+    border-radius: 5px;
+}
+
+.cube:nth-child(1) {
+    width: 60px;
+    height: 60px;
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.cube:nth-child(2) {
+    width: 100px;
+    height: 100px;
+    top: 70%;
+    left: 30%;
+    animation-delay: 2s;
+}
+
+.cube:nth-child(3) {
+    width: 80px;
+    height: 80px;
+    top: 30%;
+    left: 80%;
+    animation-delay: 4s;
+}
+
+.cube:nth-child(4) {
+    width: 50px;
+    height: 50px;
+    top: 65%;
+    left: 75%;
+    animation-delay: 6s;
+}
+
+.cube:nth-child(5) {
+    width: 70px;
+    height: 70px;
+    top: 10%;
+    left: 60%;
+    animation-delay: 8s;
+}
+
+@keyframes cube {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-1000px) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Features Section */
+.features {
+    padding: 80px 0;
+    background-color: #fff;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.feature-item {
+    background-color: var(--gray-light);
+    border-radius: 10px;
+    padding: 30px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.feature-item:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.feature-item .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.feature-item h3 {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: var(--primary-dark);
+}
+
+.feature-item p {
+    color: var(--gray-medium);
+}
+
+/* How It Works Section */
+.how-it-works {
+    padding: 80px 0;
+    background-color: var(--gray-light);
+}
+
+.steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-top: 50px;
+}
+
+.step-connector {
+    position: absolute;
+    top: 25px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    z-index: 1;
+}
+
+.step {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    width: 20%;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 auto 20px;
+}
+
+.step h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: var(--primary-dark);
+}
+
+.step p {
+    font-size: 0.9rem;
+    color: var(--gray-medium);
+}
+
+/* Report Example Section */
+.report-example {
+    padding: 80px 0;
+    background-color: #fff;
+}
+
+.report-preview {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    max-width: 900px;
+    margin: 0 auto;
+    border: 1px solid #e5e7eb;
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: var(--gray-light);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.report-title {
+    display: flex;
+    align-items: center;
+}
+
+.report-title i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    margin-right: 10px;
+}
+
+.report-title h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.report-date {
+    font-size: 0.9rem;
+    color: var(--gray-medium);
+}
+
+.report-body {
+    padding: 30px;
+}
+
+.report-section {
+    margin-bottom: 30px;
+}
+
+.report-section h4 {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    color: var(--gray-dark);
+    padding-bottom: 5px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.report-item .label {
+    font-size: 0.9rem;
+    color: var(--gray-medium);
+    margin-bottom: 5px;
+}
+
+.report-item .value {
+    font-weight: 500;
+    color: var(--gray-dark);
+}
+
+.vulnerability {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.vuln-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--gray-light);
+}
+
+.vuln-title {
+    display: flex;
+    align-items: center;
+}
+
+.vuln-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.vuln-icon.high {
+    background-color: var(--danger);
+}
+
+.vuln-icon.medium {
+    background-color: var(--warning);
+}
+
+.vuln-severity {
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.vuln-severity.high {
+    background-color: rgba(220, 38, 38, 0.1);
+    color: var(--danger);
+}
+
+.vuln-severity.medium {
+    background-color: rgba(234, 88, 12, 0.1);
+    color: var(--warning);
+}
+
+.vuln-details {
+    padding: 15px;
+}
+
+.vuln-info {
+    margin-bottom: 10px;
+}
+
+.vuln-info .label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gray-dark);
+    margin-bottom: 5px;
+}
+
+.security-score {
+    margin-bottom: 20px;
+}
+
+.score-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.score-value {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.progress-bar {
+    height: 8px;
+    background-color: #e5e7eb;
+    border-radius: 4px;
+}
+
+.progress {
+    height: 100%;
+    background-color: var(--danger);
+    border-radius:4px;
+}
