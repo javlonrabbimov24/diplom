@@ -67,9 +67,59 @@ export const scan = {
   getScanReport: (scanId, format = 'pdf') => 
     apiClient.get(`/report/export/${scanId}?format=${format}`, {
       responseType: 'blob',
+    }).then(response => {
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Get filename from content-disposition header or set default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `report-${scanId}.${format}`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch.length === 2) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up and remove the link
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
     }),
   generateReport: (scanId) => apiClient.post(`/report/generate/${scanId}`),
   cancelScan: (scanId) => apiClient.post(`/scan/${scanId}/cancel`),
+  
+  // Calculate the approximate progress of a scan based on its status and timing
+  calculateScanProgress: (scanData) => {
+    if (!scanData) return 0;
+    
+    // Return 100% for completed scans
+    if (scanData.status === 'completed') return 100;
+    
+    // Return 0% for queued scans
+    if (scanData.status === 'queued') return 5;
+    
+    // Calculate progress for in_progress scans
+    if (scanData.status === 'in_progress') {
+      const now = new Date();
+      const startTime = new Date(scanData.createdAt);
+      const elapsedMs = now - startTime;
+      
+      // Estimate: average scan takes about 90 seconds
+      // Cap at 95% - the last 5% is for report generation
+      const estimatedProgress = Math.min(95, (elapsedMs / 90000) * 100);
+      return Math.max(10, estimatedProgress); // Minimum 10% when in progress
+    }
+    
+    // For any other status (failed, cancelled)
+    return 0;
+  }
 };
 
 // Export default object with all services

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   Clock, 
@@ -14,9 +14,11 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { scan } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 const ScanDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [scanData, setScanData] = useState(null);
   const [vulnerabilities, setVulnerabilities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,9 @@ const ScanDetail = () => {
   const [expandedVulnerability, setExpandedVulnerability] = useState(null);
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [pollingInterval, setPollingInterval] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const fetchScanDetails = async () => {
@@ -33,22 +38,100 @@ const ScanDetail = () => {
         const data = await scan.getScanById(id);
         setScanData(data);
         
-        // Fetch vulnerabilities if scan is completed
-        if (data.status === 'completed') {
-          const vulnData = await scan.getVulnerabilities(id);
-          setVulnerabilities(vulnData);
+        // Calculate progress
+        const calculatedProgress = scan.calculateScanProgress(data);
+        setProgress(calculatedProgress);
+        
+        // If scan is in progress or queued, start polling
+        if (data.status === 'in_progress' || data.status === 'queued') {
+          // If not already polling, start polling
+          if (!pollingInterval) {
+            const interval = setInterval(() => fetchUpdatedStatus(), 3000);
+            setPollingInterval(interval);
+          }
+        } 
+        // If scan is completed, fetch vulnerabilities and stop polling
+        else if (data.status === 'completed') {
+          clearPollingInterval();
+          try {
+            const vulnData = await scan.getVulnerabilities(id);
+            setVulnerabilities(vulnData);
+          } catch (vulnErr) {
+            console.error('Error fetching vulnerabilities:', vulnErr);
+          }
+          
+          // Generate report if not already generated
+          try {
+            await scan.generateReport(id);
+          } catch (reportErr) {
+            console.error('Error generating report:', reportErr);
+          }
+        } 
+        // If scan failed or was cancelled, stop polling
+        else {
+          clearPollingInterval();
         }
         
         setError(null);
       } catch (err) {
-        setError('Failed to load scan details. Please try again later.');
+        setError('Skanerlash tafsilotlari yuklanmadi. Iltimos, qayta urinib ko\'ring.');
         console.error('Error fetching scan details:', err);
+        clearPollingInterval();
       } finally {
         setLoading(false);
       }
     };
 
+    const fetchUpdatedStatus = async () => {
+      try {
+        const data = await scan.getScanById(id);
+        setScanData(data);
+        
+        // Update progress
+        const calculatedProgress = scan.calculateScanProgress(data);
+        setProgress(calculatedProgress);
+        
+        // If scan is completed, fetch vulnerabilities and stop polling
+        if (data.status === 'completed') {
+          clearPollingInterval();
+          try {
+            const vulnData = await scan.getVulnerabilities(id);
+            setVulnerabilities(vulnData);
+          } catch (vulnErr) {
+            console.error('Error fetching vulnerabilities:', vulnErr);
+          }
+          
+          // Generate report if not already generated
+          try {
+            await scan.generateReport(id);
+          } catch (reportErr) {
+            console.error('Error generating report:', reportErr);
+          }
+        } 
+        // If scan failed or was cancelled, stop polling
+        else if (data.status === 'failed' || data.status === 'cancelled') {
+          clearPollingInterval();
+        }
+      } catch (err) {
+        console.error('Error polling scan status:', err);
+      }
+    };
+
+    const clearPollingInterval = () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+    };
+
     fetchScanDetails();
+
+    // Cleanup: clear polling interval when component unmounts
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
   }, [id]);
 
   const toggleVulnerabilityDetails = (vulnId) => {
@@ -61,9 +144,14 @@ const ScanDetail = () => {
 
   const handleDownloadReport = async () => {
     try {
-      await scan.generateReport(id);
+      setIsDownloading(true);
+      // Use a download format of PDF
+      await scan.getScanReport(id, 'pdf');
+      setIsDownloading(false);
     } catch (err) {
-      console.error('Error downloading report:', err);
+      console.error('Hisobot yuklab olishda xatolik:', err);
+      setIsDownloading(false);
+      toast.error('Hisobotni yuklab olishda xatolik yuz berdi');
     }
   };
 
@@ -94,11 +182,11 @@ const ScanDetail = () => {
 
   const getSeverityBadge = (severity) => {
     const severityMap = {
-      critical: { class: 'bg-red-100 text-red-800', text: 'Critical' },
-      high: { class: 'bg-orange-100 text-orange-800', text: 'High' },
-      medium: { class: 'bg-yellow-100 text-yellow-800', text: 'Medium' },
-      low: { class: 'bg-blue-100 text-blue-800', text: 'Low' },
-      info: { class: 'bg-gray-100 text-gray-800', text: 'Info' }
+      critical: { class: 'bg-red-100 text-red-800', text: 'Kritik' },
+      high: { class: 'bg-orange-100 text-orange-800', text: 'Yuqori' },
+      medium: { class: 'bg-yellow-100 text-yellow-800', text: 'O\'rta' },
+      low: { class: 'bg-blue-100 text-blue-800', text: 'Past' },
+      info: { class: 'bg-gray-100 text-gray-800', text: 'Ma\'lumot' }
     };
 
     const severityInfo = severityMap[severity.toLowerCase()] || { class: 'bg-gray-100 text-gray-800', text: severity };
@@ -112,11 +200,11 @@ const ScanDetail = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      completed: { class: 'bg-green-100 text-green-800', text: 'Completed', icon: <CheckCircle size={16} className="mr-1" /> },
-      in_progress: { class: 'bg-blue-100 text-blue-800', text: 'In Progress', icon: <Clock size={16} className="mr-1" /> },
-      queued: { class: 'bg-yellow-100 text-yellow-800', text: 'Queued', icon: <Clock size={16} className="mr-1" /> },
-      failed: { class: 'bg-red-100 text-red-800', text: 'Failed', icon: <XCircle size={16} className="mr-1" /> },
-      cancelled: { class: 'bg-gray-100 text-gray-800', text: 'Cancelled', icon: <XCircle size={16} className="mr-1" /> }
+      completed: { class: 'bg-green-100 text-green-800', text: 'Yakunlangan', icon: <CheckCircle size={16} className="mr-1" /> },
+      in_progress: { class: 'bg-blue-100 text-blue-800', text: 'Jarayonda', icon: <Clock size={16} className="mr-1" /> },
+      queued: { class: 'bg-yellow-100 text-yellow-800', text: 'Navbatda', icon: <Clock size={16} className="mr-1" /> },
+      failed: { class: 'bg-red-100 text-red-800', text: 'Muvaffaqiyatsiz', icon: <XCircle size={16} className="mr-1" /> },
+      cancelled: { class: 'bg-gray-100 text-gray-800', text: 'Bekor qilingan', icon: <XCircle size={16} className="mr-1" /> }
     };
 
     const statusInfo = statusMap[status] || { class: 'bg-gray-100 text-gray-800', text: status, icon: null };
@@ -139,8 +227,9 @@ const ScanDetail = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
+          <p className="text-gray-600 text-xl font-medium">Ma'lumotlar yuklanmoqda...</p>
         </div>
       </div>
     );
@@ -149,9 +238,14 @@ const ScanDetail = () => {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">Error! </strong>
-          <span className="block sm:inline">{error}</span>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg relative" role="alert">
+          <strong className="font-bold text-lg mb-2 block">Xatolik! </strong>
+          <p className="block sm:inline">{error}</p>
+          <div className="mt-4">
+            <Link to="/" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+              <ArrowLeft size={18} className="mr-2" /> Bosh sahifaga qaytish
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -160,9 +254,14 @@ const ScanDetail = () => {
   if (!scanData) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">Not Found! </strong>
-          <span className="block sm:inline">The requested scan could not be found.</span>
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-6 py-4 rounded-lg relative" role="alert">
+          <strong className="font-bold text-lg mb-2 block">Topilmadi! </strong>
+          <p className="block sm:inline">So'ralgan skanerlash ma'lumotlari topilmadi.</p>
+          <div className="mt-4">
+            <Link to="/" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+              <ArrowLeft size={18} className="mr-2" /> Bosh sahifaga qaytish
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -171,28 +270,28 @@ const ScanDetail = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center">
-        <Link to="/scan-history" className="text-blue-600 hover:text-blue-800 mr-4 flex items-center">
-          <ArrowLeft size={18} className="mr-1" /> Back to Scan History
+        <Link to="/" className="text-blue-600 hover:text-blue-800 mr-4 flex items-center">
+          <ArrowLeft size={18} className="mr-1" /> Bosh sahifaga qaytish
         </Link>
       </div>
 
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-            <h1 className="text-2xl font-bold mb-2 md:mb-0">Scan Details</h1>
+            <h1 className="text-2xl font-bold mb-2 md:mb-0">Skanerlash tafsilotlari</h1>
             {scanData.status === 'completed' && (
               <button 
                 onClick={handleDownloadReport}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
               >
-                <Download size={18} className="mr-2" /> Download Report
+                <Download size={18} className="mr-2" /> Hisobotni yuklab olish
               </button>
             )}
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
             <div className="bg-blue-50 rounded-lg p-4 flex-1">
-              <div className="text-sm text-blue-600 mb-1">Target URL</div>
+              <div className="text-sm text-blue-600 mb-1">Manzil URL</div>
               <div className="flex items-center text-lg font-medium">
                 <Globe size={18} className="mr-2 text-blue-600" /> 
                 <a href={scanData.targetUrl} target="_blank" rel="noopener noreferrer" className="text-blue-800 hover:underline truncate">
@@ -202,7 +301,7 @@ const ScanDetail = () => {
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4 flex-1">
-              <div className="text-sm text-gray-600 mb-1">Status</div>
+              <div className="text-sm text-gray-600 mb-1">Holati</div>
               <div className="flex items-center">
                 {getStatusBadge(scanData.status)}
               </div>
@@ -210,7 +309,7 @@ const ScanDetail = () => {
             
             {scanData.status === 'completed' && scanData.securityScore !== undefined && (
               <div className="bg-gray-50 rounded-lg p-4 flex-1">
-                <div className="text-sm text-gray-600 mb-1">Security Score</div>
+                <div className="text-sm text-gray-600 mb-1">Xavfsizlik bali</div>
                 {getSecurityScoreBadge(scanData.securityScore)}
               </div>
             )}
@@ -218,23 +317,23 @@ const ScanDetail = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-sm text-gray-600 mb-1">Start Time</div>
+              <div className="text-sm text-gray-600 mb-1">Boshlangan vaqti</div>
               <div className="flex items-center">
                 <Clock size={18} className="mr-2 text-gray-600" />
-                <span>{scanData.createdAt ? format(new Date(scanData.createdAt), 'MMM d, yyyy HH:mm:ss') : 'N/A'}</span>
+                <span>{scanData.createdAt ? format(new Date(scanData.createdAt), 'MMM d, yyyy HH:mm:ss') : 'Mavjud emas'}</span>
               </div>
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-sm text-gray-600 mb-1">Completion Time</div>
+              <div className="text-sm text-gray-600 mb-1">Yakunlangan vaqti</div>
               <div className="flex items-center">
                 <Clock size={18} className="mr-2 text-gray-600" />
-                <span>{scanData.completedAt ? format(new Date(scanData.completedAt), 'MMM d, yyyy HH:mm:ss') : 'N/A'}</span>
+                <span>{scanData.completedAt ? format(new Date(scanData.completedAt), 'MMM d, yyyy HH:mm:ss') : 'Yakunlanmagan'}</span>
               </div>
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-sm text-gray-600 mb-1">Duration</div>
+              <div className="text-sm text-gray-600 mb-1">Davomiyligi</div>
               <div className="flex items-center">
                 <Clock size={18} className="mr-2 text-gray-600" />
                 <span>
@@ -245,7 +344,7 @@ const ScanDetail = () => {
                       const seconds = Math.floor((duration % 60000) / 1000);
                       return `${minutes}m ${seconds}s`;
                     })() : 
-                    'N/A'
+                    scanData.status === 'in_progress' ? 'Hisoblanyapti...' : 'Mavjud emas'
                   }
                 </span>
               </div>
@@ -263,7 +362,7 @@ const ScanDetail = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Overview
+                Umumiy ma'lumot
               </button>
               <button
                 onClick={() => setActiveTab('vulnerabilities')}
@@ -273,7 +372,7 @@ const ScanDetail = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Vulnerabilities {vulnerabilities.length > 0 && `(${vulnerabilities.length})`}
+                Zaifliklar {vulnerabilities.length > 0 && `(${vulnerabilities.length})`}
               </button>
             </nav>
           </div>
@@ -281,7 +380,7 @@ const ScanDetail = () => {
           {/* Tab Content */}
           {activeTab === 'overview' && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">Scan Summary</h2>
+              <h2 className="text-xl font-semibold mb-4">Skanerlash xulosasi</h2>
               
               {scanData.status === 'completed' ? (
                 <div>
@@ -290,34 +389,34 @@ const ScanDetail = () => {
                       <div className="text-lg font-bold text-red-700 mb-1">
                         {vulnerabilities.filter(v => ['critical', 'high'].includes(v.severity.toLowerCase())).length}
                       </div>
-                      <div className="text-sm text-red-600">Critical/High Issues</div>
+                      <div className="text-sm text-red-600">Kritik/Yuqori zaifliklar</div>
                     </div>
                     
                     <div className="bg-yellow-50 rounded-lg p-4 text-center">
                       <div className="text-lg font-bold text-yellow-700 mb-1">
                         {vulnerabilities.filter(v => v.severity.toLowerCase() === 'medium').length}
                       </div>
-                      <div className="text-sm text-yellow-600">Medium Issues</div>
+                      <div className="text-sm text-yellow-600">O'rta darajali zaifliklar</div>
                     </div>
                     
                     <div className="bg-blue-50 rounded-lg p-4 text-center">
                       <div className="text-lg font-bold text-blue-700 mb-1">
                         {vulnerabilities.filter(v => ['low', 'info'].includes(v.severity.toLowerCase())).length}
                       </div>
-                      <div className="text-sm text-blue-600">Low/Info Issues</div>
+                      <div className="text-sm text-blue-600">Past/Ma'lumot darajali zaifliklar</div>
                     </div>
                   </div>
                   
                   {scanData.summary && (
                     <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                      <h3 className="font-medium mb-2">Executive Summary</h3>
+                      <h3 className="font-medium mb-2">Xulosa</h3>
                       <p className="text-gray-700">{scanData.summary}</p>
                     </div>
                   )}
                   
-                  {scanData.recommendations && (
+                  {scanData.recommendations && scanData.recommendations.length > 0 && (
                     <div className="bg-blue-50 rounded-lg p-4">
-                      <h3 className="font-medium mb-2">Recommendations</h3>
+                      <h3 className="font-medium mb-2">Tavsiyalar</h3>
                       <ul className="list-disc pl-5 text-gray-700">
                         {scanData.recommendations.map((rec, index) => (
                           <li key={index} className="mb-1">{rec}</li>
@@ -327,19 +426,91 @@ const ScanDetail = () => {
                   )}
                 </div>
               ) : (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                  <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Scan is {scanData.status}</h3>
-                  <p className="text-gray-600 mb-4">
-                    {scanData.status === 'in_progress' && "The scan is currently running. Please check back later for results."}
-                    {scanData.status === 'queued' && "The scan is queued and will start soon. Please check back later."}
-                    {scanData.status === 'failed' && "The scan encountered an error and could not complete."}
-                    {scanData.status === 'cancelled' && "The scan was cancelled."}
-                  </p>
-                  {(scanData.status === 'failed' || scanData.status === 'cancelled') && (
-                    <Link to="/new-scan" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                      Start New Scan
-                    </Link>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                  {scanData.status === 'in_progress' && (
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="relative w-48 h-48 mb-6">
+                        <div className="absolute inset-0 rounded-full border-8 border-blue-200"></div>
+                        <div 
+                          className="absolute inset-0 rounded-full border-8 border-transparent border-t-blue-500 animate-spin"
+                          style={{ animationDuration: '2s' }}
+                        ></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-blue-700 text-lg font-bold">{Math.round(progress)}%</div>
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-medium mb-4 text-blue-800">Skanerlash jarayonda</h3>
+                      <div className="w-full max-w-md bg-gray-200 rounded-full h-2.5 mb-4 dark:bg-gray-700">
+                        <div 
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out" 
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                      <div className="space-y-2 text-left bg-white p-4 rounded-lg shadow-sm w-full max-w-md">
+                        <div className="flex items-center">
+                          <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                          <p className="text-gray-700">URL tekshirilmoqda: {scanData.targetUrl}</p>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                          <p className="text-gray-700">Server ma'lumotlari yig'ilmoqda</p>
+                        </div>
+                        <div className="flex items-center">
+                          <div className={`w-4 h-4 rounded-full ${progress > 30 ? 'bg-green-500' : 'bg-blue-500 animate-pulse'} mr-2`}></div>
+                          <p className="text-gray-700">Zaifliklarni qidirilmoqda{progress <= 50 ? '...' : ''}</p>
+                        </div>
+                        <div className="flex items-center">
+                          <div className={`w-4 h-4 rounded-full ${progress > 80 ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'} mr-2`}></div>
+                          <p className="text-gray-700">Hisobotni tayyorlanmoqda{progress > 80 ? '...' : ''}</p>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 mt-6">
+                        Skanerlash jarayoni bir necha daqiqa davom etishi mumkin. Sahifa avtomatik yangilanib boradi.
+                      </p>
+                    </div>
+                  )}
+
+                  {scanData.status === 'queued' && (
+                    <div className="flex flex-col items-center">
+                      <div className="bg-yellow-100 p-4 rounded-full mb-4">
+                        <Clock size={48} className="text-yellow-500" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-2">Skanerlash navbatda</h3>
+                      <p className="text-gray-600 mb-4 text-center">
+                        Sizning so'rovingiz navbatga qo'yildi va tez orada boshlanadi.
+                        <br />Iltimos, kutib turing. Sahifa avtomatik yangilanadi.
+                      </p>
+                      <div className="w-full max-w-md h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                        <div className="h-full bg-yellow-500 rounded-full animate-pulse" style={{ width: '5%' }}></div>
+                      </div>
+                      <p className="text-sm text-gray-500">Taxminiy kutish vaqti: 30 soniya</p>
+                    </div>
+                  )}
+
+                  {scanData.status === 'failed' && (
+                    <div className="flex flex-col items-center">
+                      <AlertTriangle size={48} className="text-red-500 mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Skanerlash muvaffaqiyatsiz tugadi</h3>
+                      <p className="text-gray-600 mb-4">
+                        Skanerlash jarayonida xatolik yuz berdi va yakunlanmadi.
+                      </p>
+                      <Link to="/" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Yangi skanerlash boshlash
+                      </Link>
+                    </div>
+                  )}
+                  
+                  {scanData.status === 'cancelled' && (
+                    <div className="flex flex-col items-center">
+                      <XCircle size={48} className="text-gray-500 mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Skanerlash bekor qilindi</h3>
+                      <p className="text-gray-600 mb-4">
+                        Skanerlash jarayoni bekor qilindi.
+                      </p>
+                      <Link to="/" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Yangi skanerlash boshlash
+                      </Link>
+                    </div>
                   )}
                 </div>
               )}
@@ -348,22 +519,22 @@ const ScanDetail = () => {
 
           {activeTab === 'vulnerabilities' && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">Vulnerabilities</h2>
+              <h2 className="text-xl font-semibold mb-4">Zaifliklar</h2>
               
               {scanData.status !== 'completed' ? (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
                   <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No vulnerability data available</h3>
+                  <h3 className="text-lg font-medium mb-2">Zaifliklar haqida ma'lumot mavjud emas</h3>
                   <p className="text-gray-600">
-                    Vulnerability information will be available once the scan is completed.
+                    Zaifliklar haqidagi ma'lumotlar skanerlash yakunlangandan so'ng ko'rsatiladi.
                   </p>
                 </div>
               ) : vulnerabilities.length === 0 ? (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
                   <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No vulnerabilities found</h3>
+                  <h3 className="text-lg font-medium mb-2">Zaifliklar topilmadi</h3>
                   <p className="text-gray-600">
-                    Great news! No security vulnerabilities were detected during this scan.
+                    Ajoyib yangilik! Ushbu skanerlash davomida xavfsizlik zaifliklari aniqlanmadi.
                   </p>
                 </div>
               ) : (
@@ -374,12 +545,12 @@ const ScanDetail = () => {
                       onChange={(e) => setSeverityFilter(e.target.value)}
                       className="border rounded-lg px-4 py-2"
                     >
-                      <option value="all">All Severities</option>
-                      <option value="critical">Critical</option>
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                      <option value="info">Info</option>
+                      <option value="all">Barcha darajalar</option>
+                      <option value="critical">Kritik</option>
+                      <option value="high">Yuqori</option>
+                      <option value="medium">O'rta</option>
+                      <option value="low">Past</option>
+                      <option value="info">Ma'lumot</option>
                     </select>
                     
                     <select
@@ -387,20 +558,20 @@ const ScanDetail = () => {
                       onChange={(e) => setStatusFilter(e.target.value)}
                       className="border rounded-lg px-4 py-2"
                     >
-                      <option value="all">All Statuses</option>
-                      <option value="open">Open</option>
-                      <option value="fixed">Fixed</option>
-                      <option value="false_positive">False Positive</option>
-                      <option value="accepted_risk">Accepted Risk</option>
+                      <option value="all">Barcha holatlar</option>
+                      <option value="open">Ochiq</option>
+                      <option value="fixed">Tuzatilgan</option>
+                      <option value="false_positive">Soxta xabar</option>
+                      <option value="accepted_risk">Qabul qilingan xavf</option>
                     </select>
                   </div>
                   
                   {filteredVulnerabilities.length === 0 ? (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
                       <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No matching vulnerabilities</h3>
+                      <h3 className="text-lg font-medium mb-2">Mos keluvchi zaifliklar yo'q</h3>
                       <p className="text-gray-600 mb-4">
-                        No vulnerabilities match your current filters.
+                        Joriy filtrlarga mos keladigan zaifliklar topilmadi.
                       </p>
                       <button
                         onClick={() => {
@@ -409,7 +580,7 @@ const ScanDetail = () => {
                         }}
                         className="text-blue-600 hover:text-blue-800"
                       >
-                        Clear filters
+                        Filtrlarni tozalash
                       </button>
                     </div>
                   ) : (
@@ -424,7 +595,7 @@ const ScanDetail = () => {
                               <div>
                                 {getSeverityBadge(vuln.severity)}
                               </div>
-                              <div className="font-medium">{vuln.title}</div>
+                              <div className="font-medium">{vuln.title || vuln.name}</div>
                             </div>
                             <div className="flex items-center space-x-2">
                               {vuln.status && (
@@ -443,41 +614,41 @@ const ScanDetail = () => {
                           {expandedVulnerability === vuln.id && (
                             <div className="p-4 border-t">
                               <div className="mb-4">
-                                <h4 className="text-sm font-medium text-gray-500 mb-1">Description</h4>
+                                <h4 className="text-sm font-medium text-gray-500 mb-1">Tavsif</h4>
                                 <p className="text-gray-700">{vuln.description}</p>
                               </div>
                               
                               {vuln.location && (
                                 <div className="mb-4">
-                                  <h4 className="text-sm font-medium text-gray-500 mb-1">Location</h4>
+                                  <h4 className="text-sm font-medium text-gray-500 mb-1">Joylashuvi</h4>
                                   <p className="text-gray-700 font-mono text-sm bg-gray-50 p-2 rounded">{vuln.location}</p>
                                 </div>
                               )}
                               
                               {vuln.impact && (
                                 <div className="mb-4">
-                                  <h4 className="text-sm font-medium text-gray-500 mb-1">Impact</h4>
+                                  <h4 className="text-sm font-medium text-gray-500 mb-1">Ta'siri</h4>
                                   <p className="text-gray-700">{vuln.impact}</p>
                                 </div>
                               )}
                               
                               {vuln.remediation && (
                                 <div className="mb-4">
-                                  <h4 className="text-sm font-medium text-gray-500 mb-1">Remediation</h4>
+                                  <h4 className="text-sm font-medium text-gray-500 mb-1">Tuzatish yo'llari</h4>
                                   <p className="text-gray-700">{vuln.remediation}</p>
                                 </div>
                               )}
                               
                               {vuln.cvss && (
                                 <div className="mb-4">
-                                  <h4 className="text-sm font-medium text-gray-500 mb-1">CVSS Score</h4>
+                                  <h4 className="text-sm font-medium text-gray-500 mb-1">CVSS bali</h4>
                                   <p className="text-gray-700">{vuln.cvss}</p>
                                 </div>
                               )}
                               
                               {vuln.references && vuln.references.length > 0 && (
                                 <div>
-                                  <h4 className="text-sm font-medium text-gray-500 mb-1">References</h4>
+                                  <h4 className="text-sm font-medium text-gray-500 mb-1">Manbalar</h4>
                                   <ul className="list-disc pl-5">
                                     {vuln.references.map((ref, index) => (
                                       <li key={index} className="mb-1">

@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cybershield-backend
+    ports:
+      - "5001:5000"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/cybershield
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ZAP_SERVICE=zap_scanner
+      - NMAP_SERVICE=nmap_scanner
+      - TARGET_URL=${TARGET_URL:-example.com}
+    volumes:
+      - ./backend:/app
+      - ./backend/reports:/app/reports
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - mongo
+      - redis
+      - zap_scanner
+      - nmap_scanner
+    restart: unless-stopped
+    networks:
+      - default
+      - scanner_network
+
+  frontend:
+    build: 
+      context: ./frontend
+    container_name: cybershield-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:latest
+    container_name: cybershield-mongodb
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: cybershield-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  zap_scanner:
+    image: ghcr.io/zaproxy/zaproxy:latest
+    container_name: zap_scanner
+    volumes:
+      - ./backend/reports/zap:/zap/wrk
+    environment:
+      - TARGET_URL=${TARGET_URL:-https://example.com}
+    command: ["zap.sh", "-daemon", "-host", "0.0.0.0", "-port", "8080", "-config", "api.disablekey=true"]
+    restart: on-failure
+    networks:
+      - scanner_network
+
+  nmap_scanner:
+    image: instrumentisto/nmap:latest
+    container_name: nmap_scanner
+    volumes:
+      - ./backend/reports/nmap:/reports
+    environment:
+      - TARGET_URL=${TARGET_URL:-example.com}
+    restart: on-failure
+    networks:
+      - scanner_network
+
+volumes:
+  mongo-data:
+  redis-data:
+
+networks:
+  scanner_network:
+    driver: bridge
+  default:
+    driver: bridge 

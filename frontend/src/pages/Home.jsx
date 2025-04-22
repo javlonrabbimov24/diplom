@@ -31,27 +31,8 @@ const Home = () => {
       const response = await scan.startScan(scanUrl);
       const scanData = response.scan;
       
-      // Polling function to check scan status
-      const pollScanStatus = async (scanId) => {
-        try {
-          const statusResponse = await scan.getScanStatus(scanId);
-          const scanStatus = statusResponse.scan;
-          
-          if (scanStatus.status === 'completed') {
-            // Navigate to results page when completed
-            navigate(`/scan-result/${scanId}`);
-          } else {
-            // Continue polling if not completed
-            setTimeout(() => pollScanStatus(scanId), 2000);
-          }
-        } catch (err) {
-          setError('Skanerlash holatini olishda xatolik yuz berdi');
-          setLoading(false);
-        }
-      };
-      
-      // Start polling
-      pollScanStatus(scanData.id);
+      // Redirect to scan detail page where status will be checked
+      navigate(`/scan/${scanData.id}`);
       
     } catch (err) {
       setError(err.error || 'Skanerlashni boshlashda xatolik yuz berdi');
@@ -99,16 +80,38 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
                   placeholder="Web sayt manzilini kiriting (https://...)"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
+                  disabled={loading}
                   required
                 />
                 <button 
                   type="submit"
-                  className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-6 rounded-md"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-6 rounded-md flex items-center justify-center transition-all duration-300"
+                  disabled={loading}
                 >
-                  Tekshirishni boshlash
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Tekshirish boshlanmoqda...
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      Tekshirishni boshlash
+                    </>
+                  )}
                 </button>
               </form>
-              <p className="text-sm text-gray-300 mt-2">Misol: https://example.uz</p>
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mt-2">
+                  <p>{error}</p>
+                </div>
+              )}
+              <p className="text-sm text-gray-300 mt-2">Misol: example.com yoki https://example.uz</p>
             </div>
           </div>
         </div>
@@ -128,7 +131,9 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
             {/* Feature 1 */}
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="inline-flex items-center justify-center h-12 w-12 rounded-md bg-blue-800 text-white mb-4">
-                <i className="fas fa-language"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900">O'zbek tilidagi interfeys</h3>
               <p className="mt-2 text-base text-gray-600">
@@ -139,7 +144,9 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
             {/* Feature 2 */}
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="inline-flex items-center justify-center h-12 w-12 rounded-md bg-blue-800 text-white mb-4">
-                <i className="fas fa-robot"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900">Sun'iy intellekt tahlili</h3>
               <p className="mt-2 text-base text-gray-600">
@@ -150,7 +157,9 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
             {/* Feature 3 */}
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="inline-flex items-center justify-center h-12 w-12 rounded-md bg-blue-800 text-white mb-4">
-                <i className="fas fa-chart-line"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900">Batafsil hisobotlar</h3>
               <p className="mt-2 text-base text-gray-600">
@@ -161,7 +170,9 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
             {/* Feature 4 */}
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="inline-flex items-center justify-center h-12 w-12 rounded-md bg-blue-800 text-white mb-4">
-                <i className="fas fa-tachometer-alt"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900">Tezkor skanerlash</h3>
               <p className="mt-2 text-base text-gray-600">
@@ -172,7 +183,9 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
             {/* Feature 5 */}
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="inline-flex items-center justify-center h-12 w-12 rounded-md bg-blue-800 text-white mb-4">
-                <i className="fas fa-history"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900">Tarixni saqlash</h3>
               <p className="mt-2 text-base text-gray-600">
@@ -183,7 +196,9 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
             {/* Feature 6 */}
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="inline-flex items-center justify-center h-12 w-12 rounded-md bg-blue-800 text-white mb-4">
-                <i className="fas fa-cloud"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900">Bulutli xizmat</h3>
               <p className="mt-2 text-base text-gray-600">

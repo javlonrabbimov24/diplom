@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+  api_service:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: scan_api
+    ports:
+      - "7080:5000"
+    volumes:
+      - ./reports:/app/reports
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TARGET_URL=${TARGET_URL:-example.com}
+      - ZAP_SERVICE=zap_scanner
+      - NMAP_SERVICE=nmap_scanner
+    networks:
+      - scanner_network
+    depends_on:
+      - zap_scanner
+      - nmap_scanner
+
+  zap_scanner:
+    image: ghcr.io/zaproxy/zaproxy:latest
+    container_name: zap_scanner
+    volumes:
+      - ./reports/zap:/zap/wrk
+    environment:
+      - TARGET_URL=${TARGET_URL:-example.com}
+    command: ["zap.sh", "-daemon", "-host", "0.0.0.0", "-port", "8080", "-config", "api.disablekey=true"]
+    networks:
+      - scanner_network
+
+  nmap_scanner:
+    image: instrumentisto/nmap:latest
+    container_name: nmap_scanner
+    volumes:
+      - ./reports/nmap:/reports
+    environment:
+      - TARGET_URL=${TARGET_URL:-example.com}
+    networks:
+      - scanner_network
+
+networks:
+  scanner_network:
+    driver: bridge

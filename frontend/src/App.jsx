@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard'
 import Threats from './pages/Threats'
 import Settings from './pages/Settings'
 import ScanDetail from './pages/ScanDetail'
+import Login from './pages/Login'
+import Register from './pages/Register'
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
           <Route path="/threats" element={<Threats />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/scan/:scanId" element={<ScanDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Routes>
       </main>
     </div>
