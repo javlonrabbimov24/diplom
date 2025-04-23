@@ -1,0 +1,40 @@
+env:
+  contexts:
+  - excludePaths: []
+    name: baseline
+    urls:
+    - http://kun.uz
+  parameters:
+    failOnError: true
+    progressToStdout: false
+jobs:
+- parameters:
+    enableTags: false
+    maxAlertsPerRule: 10
+  type: passiveScan-config
+- parameters:
+    maxDuration: 1
+    url: http://kun.uz
+  type: spider
+- parameters:
+    maxDuration: 0
+  type: passiveScan-wait
+- parameters:
+    format: Long
+    summaryFile: /home/zap/zap_out.json
+  rules: []
+  type: outputSummary
+- parameters:
+    reportDescription: ''
+    reportDir: /zap/wrk/
+    reportFile: /zap/wrk/http___kun_uz-zap-scanning-report.html
+    reportTitle: ZAP Scanning Report
+    template: traditional-html
+  type: report
+- parameters:
+    reportDescription: ''
+    reportDir: /zap/wrk/
+    reportFile: /zap/wrk/http___kun_uz-zap-report.json
+    reportTitle: ZAP Scanning Report
+    template: traditional-json
+  type: report

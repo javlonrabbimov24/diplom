@@ -16,8 +16,11 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'your-secret-key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # 1 hour
 jwt = JWTManager(app)
 
-# Oddiy CORS konfiguratsiyasi - barcha so'rovlarni qabul qiladi
-CORS(app, supports_credentials=True)
+# CORS konfiguratsiyasi yangilash - frontend-ga ruxsat berish uchun
+CORS(app, 
+     origins=['http://localhost:3001', 'http://127.0.0.1:3001', 'http://cybershield-frontend'],
+     allow_headers=['Content-Type', 'Authorization', 'X-User-ID'],
+     supports_credentials=True)
 
 # Import and register blueprints
 from api.auth import auth_bp
@@ -30,8 +33,9 @@ app.register_blueprint(report_bp, url_prefix='/api/report')
 
 @app.after_request
 def after_request(response):
+    # Allow requests from all origins in development
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-User-ID')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
@@ -44,4 +48,6 @@ def view_report(report_id):
     return render_template('report.html', report_id=report_id)
 
 if __name__ == '__main__':
+    # Use port 5000 which maps to 5001 in docker-compose
+    print(f"Starting Flask server on http://0.0.0.0:5000")
     app.run(debug=True, host='0.0.0.0', port=5000)

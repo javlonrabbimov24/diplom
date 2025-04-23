@@ -5,7 +5,10 @@ import json
 from datetime import datetime
 import os
 import io
-from utils.openai_helper import generate_pdf_report
+from utils.openai_helper import generate_pdf_report, analyze_scan_with_chatgpt
+import traceback
+import sys
+from api.scan_api import scan_results, scans
 
 # Create reports directory if it doesn't exist
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'reports')
@@ -19,9 +22,7 @@ report_bp = Blueprint('report', __name__)
 @report_bp.route('/<report_id>', methods=['GET'])
 def get_report(report_id):
     """Get a specific report by ID."""
-    # We reuse scan_results from scan_api
-    from api.scan_api import scan_results
-    
+    # Check if report exists
     if report_id not in scan_results:
         return jsonify({"error": "Hisobot topilmadi"}), 404
     
@@ -31,114 +32,137 @@ def get_report(report_id):
         "report": result
     }), 200
 
-@report_bp.route('/export/<report_id>', methods=['GET'])
-def export_report(report_id):
-    """Export a report as JSON or PDF file."""
-    # We reuse scan_results from scan_api
-    from api.scan_api import scan_results
-    
-    if report_id not in scan_results:
-        return jsonify({"error": "Hisobot topilmadi"}), 404
-    
-    result = scan_results[report_id]
-    
-    # Get format from query parameters (default to pdf)
-    format = request.args.get('format', 'pdf').lower()
-    
-    if format == 'json':
-        # Create a JSON string of the result
-        report_json = json.dumps(result, indent=2, ensure_ascii=False)
+@report_bp.route('/export/<scan_id>', methods=['GET'])
+def export_report(scan_id):
+    """Export scan results as a PDF report."""
+    try:
+        # Check for invalid scan ID
+        if not scan_id or scan_id == 'undefined':
+            return jsonify({"error": "Noto'g'ri scan ID"}), 400
+            
+        # Check if scan exists
+        if scan_id not in scans:
+            return jsonify({"error": "Skanerlash topilmadi"}), 404
         
-        # Create a file-like object
-        report_file = io.BytesIO(report_json.encode('utf-8'))
+        scan = scans[scan_id]
+        
+        # Check if scan is completed
+        if scan['status'] != 'completed':
+            return jsonify({"error": "Skanerlash hali yakunlanmagan"}), 400
+        
+        # Check if result exists
+        if scan_id not in scan_results:
+            return jsonify({"error": "Skanerlash natijasi topilmadi"}), 404
+        
+        # Get export format (pdf or html, default is pdf)
+        format_type = request.args.get('format', 'pdf').lower()
+        if format_type not in ['pdf', 'html', 'json']:
+            format_type = 'pdf'
+        
+        # Create reports directory if it doesn't exist
+        reports_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../reports/exports'))
+        os.makedirs(reports_dir, exist_ok=True)
         
         # Generate filename
-        filename = f"cybershield_report_{report_id[:8]}_{datetime.now().strftime('%Y%m%d')}.json"
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        safe_url = scan['url'].replace('://', '_').replace('/', '_').replace('.', '_')
+        filename = f"{safe_url}_{timestamp}.{format_type}"
+        output_path = os.path.join(reports_dir, filename)
         
-        return send_file(
-            report_file,
-            as_attachment=True,
-            download_name=filename,
-            mimetype='application/json'
-        )
-    elif format == 'pdf':
-        # Generate PDF report
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        report_filename = f"report_{report_id[:8]}_{timestamp}.pdf"
-        report_path = os.path.join(REPORTS_DIR, report_filename)
+        # Get scan result
+        result = scan_results[scan_id]
         
-        # For demo, generate a JSON file as a placeholder
-        # In a real implementation, this would generate a PDF file
-        pdf_path = generate_pdf_report(result, report_path)
-        
-        if not pdf_path:
-            return jsonify({"error": "Hisobot generatsiya qilishda xatolik yuz berdi"}), 500
-            
-        # Check if it's a JSON file (placeholder for demo)
-        if pdf_path.endswith('.json'):
-            with open(pdf_path, 'r', encoding='utf-8') as f:
-                report_data = f.read()
-            report_file = io.BytesIO(report_data.encode('utf-8'))
-            filename = f"cybershield_report_{report_id[:8]}_{datetime.now().strftime('%Y%m%d')}.json"
-            mime_type = 'application/json'
+        if format_type == 'json':
+            # Export as JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
         else:
-            # Actual PDF
-            with open(pdf_path, 'rb') as f:
-                report_data = f.read()
-            report_file = io.BytesIO(report_data)
-            filename = f"cybershield_report_{report_id[:8]}_{datetime.now().strftime('%Y%m%d')}.pdf"
-            mime_type = 'application/pdf'
+            # Generate PDF (or HTML as fallback)
+            output_path = generate_pdf_report(result, output_path)
+            # Check if output is HTML (fallback if PDF generation failed)
+            if output_path.endswith('.html'):
+                format_type = 'html'
+        
+        # Set appropriate content type
+        content_types = {
+            'pdf': 'application/pdf',
+            'html': 'text/html',
+            'json': 'application/json'
+        }
+        
+        # Set appropriate download filename
+        download_filename = f"CyberShield_Report_{safe_url[:20]}_{timestamp}.{format_type}"
         
         return send_file(
-            report_file,
+            output_path,
+            mimetype=content_types[format_type],
             as_attachment=True,
-            download_name=filename,
-            mimetype=mime_type
+            download_name=download_filename,
+            max_age=300  # Cache for 5 minutes
         )
-    else:
-        return jsonify({"error": "Qo'llab-quvvatlanmaydigan format"}), 400
+    except Exception as e:
+        print(f"Error exporting report for scan {scan_id}: {str(e)}")
+        traceback.print_exc(file=sys.stdout)
+        return jsonify({"error": f"Hisobotni eksport qilishda xatolik: {str(e)}"}), 500
 
-@report_bp.route('/generate/<report_id>', methods=['POST'])
-def generate_report(report_id):
-    """Generate a report for a scan."""
-    # We reuse scan_results from scan_api
-    from api.scan_api import scan_results, scans
-    
-    if report_id not in scan_results:
-        return jsonify({"error": "Hisobot topilmadi"}), 404
+@report_bp.route('/generate/<scan_id>', methods=['POST'])
+def generate_report(scan_id):
+    """Generate an AI analysis report for a scan."""
+    try:
+        # Check for invalid scan ID
+        if not scan_id or scan_id == 'undefined':
+            return jsonify({"error": "Noto'g'ri scan ID"}), 400
+            
+        # Check if scan exists
+        if scan_id not in scans:
+            return jsonify({"error": "Skanerlash topilmadi"}), 404
         
-    # Check if scan is completed
-    if report_id not in scans or scans[report_id]['status'] != 'completed':
-        return jsonify({"error": "Skanerlash hali yakunlanmagan"}), 400
-    
-    result = scan_results[report_id]
-    
-    # If we haven't already analyzed with ChatGPT, do it now
-    if not result.get('is_analyzed'):
-        from utils.openai_helper import analyze_scan_with_chatgpt
-        try:
-            analysis = analyze_scan_with_chatgpt(result)
-            result['summary'] = analysis.get('summary', '')
-            result['recommendations'] = analysis.get('recommendations', [])
-            result['is_analyzed'] = True
-        except Exception as e:
-            print(f"Error analyzing scan result: {str(e)}")
+        scan = scans[scan_id]
+        
+        # Check if scan is completed
+        if scan['status'] != 'completed':
+            return jsonify({"error": "Skanerlash hali yakunlanmagan"}), 400
+        
+        # Check if result exists
+        if scan_id not in scan_results:
+            return jsonify({"error": "Skanerlash natijasi topilmadi"}), 404
+        
+        result = scan_results[scan_id]
+        
+        # If analysis already exists, return existing data
+        if result.get('is_analyzed'):
             return jsonify({
-                "error": "Hisobot tahlil qilishda xatolik yuz berdi", 
-                "success": False
-            }), 500
-    
-    return jsonify({
-        "message": "Hisobot generatsiya qilindi",
-        "success": True
-    }), 200
+                "message": "Hisobot allaqachon mavjud",
+                "report": {
+                    "summary": result.get('summary', ''),
+                    "recommendations": result.get('recommendations', [])
+                }
+            }), 200
+        
+        # Get analysis from OpenAI
+        analysis = analyze_scan_with_chatgpt(result)
+        
+        # Update result with analysis
+        result['summary'] = analysis.get('summary', '')
+        result['recommendations'] = analysis.get('recommendations', [])
+        result['is_analyzed'] = True
+        
+        return jsonify({
+            "message": "Hisobot muvaffaqiyatli yaratildi",
+            "report": {
+                "summary": result['summary'],
+                "recommendations": result['recommendations']
+            }
+        }), 200
+    except Exception as e:
+        print(f"Error generating report for scan {scan_id}: {str(e)}")
+        traceback.print_exc(file=sys.stdout)
+        return jsonify({"error": f"Hisobot yaratishda xatolik: {str(e)}"}), 500
 
 @report_bp.route('/summary/<report_id>', methods=['GET'])
 def get_report_summary(report_id):
     """Get a summary of a specific report."""
-    # We reuse scan_results from scan_api
-    from api.scan_api import scan_results
-    
+    # Check if report exists
     if report_id not in scan_results:
         return jsonify({"error": "Hisobot topilmadi"}), 404
     
@@ -163,9 +187,6 @@ def get_report_summary(report_id):
 @jwt_required(optional=True)
 def get_latest_reports():
     """Get the latest reports for the user."""
-    # We reuse scan_results from scan_api
-    from api.scan_api import scan_results, scans
-    
     user_id = get_jwt_identity()
     
     # If not authenticated, return limited results

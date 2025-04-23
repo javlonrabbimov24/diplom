@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+// Ensure consistent port number with docker-compose.yml
+const API_URL = 'http://localhost:5001/api';
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
@@ -8,8 +9,12 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: false  // Ensure credentials aren't sent for CORS requests
+  withCredentials: false, // Ensure credentials aren't sent for CORS requests
+  timeout: 60000 // Increase timeout to 60 seconds for scans
 });
+
+// Debug connection issues
+console.log('API configured with baseURL:', API_URL);
 
 // Add request interceptor to add authorization token
 apiClient.interceptors.request.use(
@@ -18,21 +23,38 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log(`Request to: ${config.url}`, config); // For debugging
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
 );
 
 // Add response interceptor to handle errors
 apiClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    console.log(`Response from: ${response.config.url}`, response.data); // For debugging
+    return response.data;
+  },
   (error) => {
+    console.error('API error:', error);
+    // Log more details for debugging
+    if (error.response) {
+      console.error('Error response data:', error.response.data);
+      console.error('Error response status:', error.response.status);
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    }
+    
     // Handle unauthorized errors (token expired)
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    
     return Promise.reject(
       error.response?.data || { error: 'Serverda xatolik yuz berdi' }
     );
@@ -58,42 +80,101 @@ export const user = {
 // Scan service
 export const scan = {
   startScan: (url) => apiClient.post('/scan/start', { url }),
-  getScanStatus: (scanId) => apiClient.get(`/scan/status/${scanId}`),
-  getScanResult: (scanId) => apiClient.get(`/scan/result/${scanId}`),
-  getScanById: (scanId) => apiClient.get(`/scan/${scanId}`),
+  getScanStatus: (scanId) => {
+    if (!scanId) {
+      console.error('Invalid scan ID: undefined');
+      return Promise.reject(new Error('Skanerlash ID raqami noto\'g\'ri'));
+    }
+    return apiClient.get(`/scan/status/${scanId}`);
+  },
+  getScanResult: (scanId) => {
+    if (!scanId) {
+      console.error('Invalid scan ID: undefined');
+      return Promise.reject(new Error('Skanerlash ID raqami noto\'g\'ri'));
+    }
+    return apiClient.get(`/scan/result/${scanId}`);
+  },
+  getScanById: (scanId) => {
+    if (!scanId) {
+      console.error('Invalid scan ID: undefined');
+      return Promise.reject(new Error('Skanerlash ID raqami noto\'g\'ri'));
+    }
+    return apiClient.get(`/scan/${scanId}`);
+  },
   getScanHistory: () => apiClient.get('/scan/history'),
   getDashboardStats: () => apiClient.get('/scan/stats'),
-  getVulnerabilities: (scanId) => apiClient.get(`/scan/${scanId}/vulnerabilities`),
-  getScanReport: (scanId, format = 'pdf') => 
-    apiClient.get(`/report/export/${scanId}?format=${format}`, {
+  getVulnerabilities: (scanId) => {
+    if (!scanId) {
+      console.error('Invalid scan ID: undefined');
+      return Promise.reject(new Error('Skanerlash ID raqami noto\'g\'ri'));
+    }
+    return apiClient.get(`/scan/${scanId}/vulnerabilities`);
+  },
+  getScanReport: (scanId, format = 'pdf') => {
+    if (!scanId) {
+      console.error('Invalid scan ID: undefined');
+      return Promise.reject(new Error('Skanerlash ID raqami noto\'g\'ri'));
+    }
+    return apiClient.get(`/report/export/${scanId}?format=${format}`, {
       responseType: 'blob',
     }).then(response => {
-      // Create blob link to download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      
-      // Get filename from content-disposition header or set default
-      const contentDisposition = response.headers['content-disposition'];
-      let filename = `report-${scanId}.${format}`;
-      
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (filenameMatch && filenameMatch.length === 2) {
-          filename = filenameMatch[1];
+      try {
+        // Check if response is valid
+        if (!response || !response.data) {
+          console.error('Empty response for report download');
+          throw new Error('Hisobot yuklanmadi');
         }
+        
+        // Create blob link to download
+        const blob = new Blob([response.data], { 
+          type: format === 'pdf' ? 'application/pdf' : 
+                format === 'html' ? 'text/html' : 
+                'application/json' 
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Get filename from content-disposition header or set default
+        const contentDisposition = response.headers?.['content-disposition'];
+        let filename = `cybershield-report-${scanId}.${format}`;
+        
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+          if (filenameMatch && filenameMatch.length === 2) {
+            filename = filenameMatch[1];
+          }
+        }
+        
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up and remove the link
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        return true;
+      } catch (error) {
+        console.error('Error handling report download response:', error);
+        throw error;
       }
-      
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up and remove the link
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    }),
-  generateReport: (scanId) => apiClient.post(`/report/generate/${scanId}`),
-  cancelScan: (scanId) => apiClient.post(`/scan/${scanId}/cancel`),
+    });
+  },
+  generateReport: (scanId) => {
+    if (!scanId) {
+      console.error('Invalid scan ID: undefined');
+      return Promise.reject(new Error('Skanerlash ID raqami noto\'g\'ri'));
+    }
+    return apiClient.post(`/report/generate/${scanId}`);
+  },
+  cancelScan: (scanId) => {
+    if (!scanId) {
+      console.error('Invalid scan ID: undefined');
+      return Promise.reject(new Error('Skanerlash ID raqami noto\'g\'ri'));
+    }
+    return apiClient.post(`/scan/${scanId}/cancel`);
+  },
   
   // Calculate the approximate progress of a scan based on its status and timing
   calculateScanProgress: (scanData) => {

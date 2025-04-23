@@ -32,6 +32,16 @@ const ScanDetail = () => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    // ID parametrini tekshirish
+    if (!id || id === 'undefined') {
+      console.error('Invalid scan ID:', id);
+      setError('Noto\'g\'ri skanerlash ID raqami.');
+      setTimeout(() => {
+        navigate('/');  // Redirect to home page
+      }, 1000);
+      return;
+    }
+
     const fetchScanDetails = async () => {
       try {
         setLoading(true);
@@ -74,8 +84,8 @@ const ScanDetail = () => {
         
         setError(null);
       } catch (err) {
-        setError('Skanerlash tafsilotlari yuklanmadi. Iltimos, qayta urinib ko\'ring.');
         console.error('Error fetching scan details:', err);
+        setError('Skanerlash tafsilotlari yuklanmadi. Iltimos, qayta urinib ko\'ring.');
         clearPollingInterval();
       } finally {
         setLoading(false);
@@ -83,6 +93,12 @@ const ScanDetail = () => {
     };
 
     const fetchUpdatedStatus = async () => {
+      if (!id || id === 'undefined') {
+        console.error('Invalid scan ID for status update:', id);
+        clearPollingInterval();
+        return;
+      }
+      
       try {
         const data = await scan.getScanById(id);
         setScanData(data);
@@ -114,6 +130,11 @@ const ScanDetail = () => {
         }
       } catch (err) {
         console.error('Error polling scan status:', err);
+        // If we get multiple polling errors, stop polling
+        if (err.message && (err.message.includes('404') || err.message.includes('not found'))) {
+          clearPollingInterval();
+          setError('Skanerlash ma\'lumotlari topilmadi.');
+        }
       }
     };
 
@@ -124,7 +145,10 @@ const ScanDetail = () => {
       }
     };
 
-    fetchScanDetails();
+    // Only fetch if ID is valid
+    if (id && id !== 'undefined') {
+      fetchScanDetails();
+    }
 
     // Cleanup: clear polling interval when component unmounts
     return () => {
@@ -132,7 +156,7 @@ const ScanDetail = () => {
         clearInterval(pollingInterval);
       }
     };
-  }, [id]);
+  }, [id, navigate, pollingInterval]);
 
   const toggleVulnerabilityDetails = (vulnId) => {
     if (expandedVulnerability === vulnId) {
@@ -143,6 +167,12 @@ const ScanDetail = () => {
   };
 
   const handleDownloadReport = async () => {
+    // Only attempt download if ID is valid
+    if (!id || id === 'undefined') {
+      toast.error('Hisobot ID raqami noto\'g\'ri');
+      return;
+    }
+    
     try {
       setIsDownloading(true);
       // Use a download format of PDF

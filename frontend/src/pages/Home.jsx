@@ -1,42 +1,61 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { scan } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 const Home = () => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [isScanning, setIsScanning] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleStartScan = async (e) => {
     e.preventDefault();
     
-    // Reset states
-    setError('');
-    setLoading(true);
+    // Trim URL to remove whitespace
+    const trimmedUrl = url.trim();
+    
+    // Basic URL validation
+    if (!trimmedUrl) {
+      toast.error('URL kiritilishi shart');
+      return;
+    }
+    
+    // Add http:// prefix if not present
+    let formattedUrl = trimmedUrl;
+    if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+      formattedUrl = 'http://' + formattedUrl;
+      setUrl(formattedUrl);
+    }
     
     try {
-      // Validate URL
-      if (!url.trim()) {
-        throw { error: "URL kiritilishi shart" };
+      setIsScanning(true);
+      setErrorMessage('');
+      
+      // Start the scan
+      const response = await scan.startScan(formattedUrl);
+      
+      // Check if we have a valid scan ID in the response
+      if (response && response.scan && response.scan.id) {
+        // Store scan ID
+        const newScanId = response.scan.id;
+        console.log('Scan started with ID:', newScanId);
+        
+        // Redirect to the scan detail page
+        navigate(`/scan/${newScanId}`);
+      } else {
+        console.error('Invalid response from server:', response);
+        setErrorMessage('Serverdan noto\'g\'ri javob: scan ID ma\'lumoti yo\'q');
+        setIsScanning(false);
+        toast.error('Skanerlash boshlanishida xatolik');
       }
-      
-      // Add protocol if missing
-      let scanUrl = url;
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        scanUrl = 'https://' + url;
-      }
-      
-      // Start scan
-      const response = await scan.startScan(scanUrl);
-      const scanData = response.scan;
-      
-      // Redirect to scan detail page where status will be checked
-      navigate(`/scan/${scanData.id}`);
-      
-    } catch (err) {
-      setError(err.error || 'Skanerlashni boshlashda xatolik yuz berdi');
-      setLoading(false);
+    } catch (error) {
+      console.error('Error starting scan:', error);
+      setErrorMessage(error.message || 'Skanerlash boshlanishida xatolik');
+      setIsScanning(false);
+      toast.error(error.message || 'Skanerlash boshlanishida xatolik');
     }
   };
 
@@ -73,22 +92,22 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
               O'zbek tilidagi zaiflik skaneri orqali web saytingizning xavfsizligini tekshiring va xakerlardan himoyalaning
             </p>
             <div className="mt-10 max-w-lg mx-auto">
-              <form onSubmit={handleSubmit} className="flex flex-col md:flex-row justify-center gap-2">
+              <form onSubmit={handleStartScan} className="flex flex-col md:flex-row justify-center gap-2">
                 <input 
                   type="text" 
                   className="flex-1 rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-300 focus:outline-none" 
                   placeholder="Web sayt manzilini kiriting (https://...)"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  disabled={loading}
+                  disabled={isScanning}
                   required
                 />
                 <button 
                   type="submit"
                   className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-6 rounded-md flex items-center justify-center transition-all duration-300"
-                  disabled={loading}
+                  disabled={isScanning}
                 >
-                  {loading ? (
+                  {isScanning ? (
                     <>
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -106,9 +125,9 @@ commentDiv.appendChild(safeComment); // innerHTML ishlatmang`;
                   )}
                 </button>
               </form>
-              {error && (
+              {errorMessage && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mt-2">
-                  <p>{error}</p>
+                  <p>{errorMessage}</p>
                 </div>
               )}
               <p className="text-sm text-gray-300 mt-2">Misol: example.com yoki https://example.uz</p>

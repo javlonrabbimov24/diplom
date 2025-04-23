@@ -66,6 +66,11 @@ services:
       - ./backend/reports/zap:/zap/wrk
     environment:
       - TARGET_URL=${TARGET_URL:-https://example.com}
+      - ZAP_PORT=8080
+      - ZAP_HOST=0.0.0.0
+      - ZAP_API_KEY=
+    ports:
+      - "9090:8080"  # Changed to port 9090 as 8080 and 8081 might be busy
     command: ["zap.sh", "-daemon", "-host", "0.0.0.0", "-port", "8080", "-config", "api.disablekey=true"]
     restart: on-failure
     networks:

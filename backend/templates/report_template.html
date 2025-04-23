@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberShield - Xavfsizlik Tekshiruvi Hisoboti</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #eaeaea;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        
+        .logo span {
+            color: #333;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .report-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 0;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .info-item {
+            margin-bottom: 10px;
+        }
+        
+        .info-label {
+            font-weight: 500;
+            margin-right: 10px;
+            color: #666;
+        }
+        
+        .info-value {
+            font-weight: 400;
+        }
+        
+        .security-score {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .score-high {
+            background-color: #10b981;
+        }
+        
+        .score-medium {
+            background-color: #f59e0b;
+        }
+        
+        .score-low {
+            background-color: #ef4444;
+        }
+        
+        .summary-section {
+            padding: 20px 0;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #2563eb;
+        }
+        
+        .recommendations-section {
+            padding: 20px 0;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .recommendation-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f1f5f9;
+            border-left: 3px solid #2563eb;
+        }
+        
+        .vulnerabilities-section {
+            padding: 20px 0;
+        }
+        
+        .vulnerability-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .vulnerability-table th,
+        .vulnerability-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .vulnerability-table th {
+            background-color: #f1f5f9;
+            font-weight: 500;
+        }
+        
+        .severity-badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+            display: inline-block;
+        }
+        
+        .severity-high {
+            background-color: #ef4444;
+        }
+        
+        .severity-medium {
+            background-color: #f59e0b;
+        }
+        
+        .severity-low {
+            background-color: #3b82f6;
+        }
+        
+        .severity-info {
+            background-color: #6b7280;
+        }
+        
+        .server-info {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eaeaea;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Cyber<span>Shield</span></div>
+            <div class="subtitle">Xavfsizlik Tekshiruvi Hisoboti</div>
+        </div>
+        
+        <div class="report-info">
+            <div class="info-col">
+                <div class="info-item">
+                    <span class="info-label">URL:</span>
+                    <span class="info-value">{{ url }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Sana va Vaqt:</span>
+                    <span class="info-value">{{ scan_date }}</span>
+                </div>
+            </div>
+            <div class="info-col">
+                <div class="info-item">
+                    <span class="info-label">Yuqori Zaifliklar:</span>
+                    <span class="info-value">{{ severity_counts.high }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">O'rta Zaifliklar:</span>
+                    <span class="info-value">{{ severity_counts.medium }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Past Zaifliklar:</span>
+                    <span class="info-value">{{ severity_counts.low }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="security-score">
+            <div class="section-title">Xavfsizlik Balli</div>
+            {% if security_score >= 80 %}
+                <div class="score-circle score-high">{{ security_score }}</div>
+            {% elif security_score >= 50 %}
+                <div class="score-circle score-medium">{{ security_score }}</div>
+            {% else %}
+                <div class="score-circle score-low">{{ security_score }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="summary-section">
+            <div class="section-title">Qisqacha Ma'lumot</div>
+            <p>{{ summary }}</p>
+        </div>
+        
+        <div class="recommendations-section">
+            <div class="section-title">Tavsiyalar</div>
+            {% for recommendation in recommendations %}
+                <div class="recommendation-item">{{ recommendation }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="vulnerabilities-section">
+            <div class="section-title">Aniqlangan Zaifliklar</div>
+            <table class="vulnerability-table">
+                <thead>
+                    <tr>
+                        <th>Nomi</th>
+                        <th>Jiddiylik</th>
+                        <th>Ta'rif</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vuln in vulnerabilities %}
+                        <tr>
+                            <td>{{ vuln.name }}</td>
+                            <td>
+                                {% if vuln.severity == "high" %}
+                                    <span class="severity-badge severity-high">Yuqori</span>
+                                {% elif vuln.severity == "medium" %}
+                                    <span class="severity-badge severity-medium">O'rta</span>
+                                {% elif vuln.severity == "low" %}
+                                    <span class="severity-badge severity-low">Past</span>
+                                {% else %}
+                                    <span class="severity-badge severity-info">Ma'lumot</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ vuln.description }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if server_info %}
+        <div class="server-info">
+            <div class="section-title">Server Ma'lumotlari</div>
+            <div class="info-item">
+                <span class="info-label">Server:</span>
+                <span class="info-value">{{ server_info.server }}</span>
+            </div>
+            {% if server_info.technologies %}
+            <div class="info-item">
+                <span class="info-label">Texnologiyalar:</span>
+                <span class="info-value">{{ server_info.technologies }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="footer">
+            <p>© {{ scan_date.split(' ')[0] }} CyberShield. Barcha huquqlar himoyalangan.</p>
+        </div>
+    </div>
+</body>
+</html> 

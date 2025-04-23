@@ -1,79 +1,101 @@
-# CyberShield - Web Application Security Scanner
+# CyberShield - Web Sayt Xavfsizlik Skaneri
 
-CyberShield is a comprehensive web application security scanning tool that helps you identify security vulnerabilities in your web applications. It features an intuitive web interface and provides detailed reports with AI-powered analysis.
+CyberShield - web saytlar xavfsizligini tekshirish uchun o'zbek tilidagi skanerdir. Bu tizim ZAP va Nmap kabi mashhur xavfsizlik vositalaridan foydalanib, web saytlardagi zaifliklarni aniqlab, ularni o'zbek tilida tahlil qilib beradi.
 
-## Features
+## Imkoniyatlari
 
-- Scan websites for security vulnerabilities
-- Asynchronous scanning to handle multiple requests
-- AI-powered analysis of scan results using Google's Gemini API
-- Detailed reports with security scores and recommendations
-- Export reports in PDF and JSON formats
-- User authentication and scan history
+- Web saytlarni avtomatik skanerlash
+- OWASP Top 10 zaifliklarni aniqlash
+- O'zbek tilidagi interfeys va hisobotlar
+- Real-time skanerlash jarayonini kuzatish
+- Gemini AI yordamida zaifliklarni tahlil qilish
+- PDF formatida hisobotlarni yuklab olish
+- Ilgari o'tkazilgan skanerlashlar tarixini saqlash
+- Xavfsizlik ballarini hisoblash
+- Aniqlangan zaifliklarni bartaraf etish bo'yicha tavsiyalar
 
-## Prerequisites
+## O'rnatish
 
-- Docker and Docker Compose
-- Google Gemini API key
+### Talablar
 
-## Setup
+- Docker va Docker Compose o'rnatilgan bo'lishi kerak
+- Internet aloqasi (ZAP va Nmap skanerlari uchun)
+- Google Cloud Gemini API kaliti (AI tahlili uchun)
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/cybershield.git
-   cd cybershield
-   ```
+### O'rnatish Qadamlari
 
-2. Create a `.env` file in the root directory with your Gemini API key:
-   ```
-   GEMINI_API_KEY=your_gemini_api_key_here
-   JWT_SECRET=your_jwt_secret_here
-   ```
-
-3. Build and start the containers:
-   ```
-   docker-compose up -d
-   ```
-
-4. Access the web interface at:
-   ```
-   http://localhost:3000
-   ```
-
-## Usage
-
-1. Register or login to your account
-2. Enter a URL to scan on the dashboard
-3. View scan results in real-time
-4. Analyze detailed reports with AI-generated recommendations
-5. Export reports as PDF if needed
-
-## Architecture
-
-The application consists of:
-
-- Frontend (React.js)
-- Backend API (Flask)
-- MongoDB for data storage
-- Redis for job queue
-- Integration with Google Gemini API for analysis
-
-## Development
-
-To run the application in development mode:
-
-```
-# Start the backend
-cd backend
-pip install -r requirements.txt
-python app.py
-
-# Start the frontend
-cd frontend
-npm install
-npm run dev
+1. Repositoriyani klonlash:
+```bash
+git clone https://github.com/yourusername/cybershield.git
+cd cybershield
 ```
 
-## License
+2. Kerakli sozlashlarni o'rnatish:
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+`.env` faylini yarating va quyidagi o'zgaruvchilarni sozlang:
+```
+GEMINI_API_KEY=your-gemini-api-key-here
+JWT_SECRET=your-jwt-secret-key-here
+TARGET_URL=example.com
+```
+
+3. Setup skriptini ishga tushiring:
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+4. Brauzeringizda quyidagi URL ga o'ting:
+```
+http://localhost:3001
+```
+
+## Foydalanish
+
+1. Bosh sahifada skanerlash uchun URL manzilini kiriting
+2. Tekshirishni boshlash tugmasini bosing
+3. Skanerlash jarayoni tugatilgandan so'ng, natijalar ko'rsatiladi
+4. Aniqlangan zaifliklarni, xavfsizlik ballini va tavsiyalarni ko'rish mumkin
+5. Hisobotni PDF formatida yuklab olish uchun "Yuklab olish" tugmasini bosing
+
+## Tizim Arxitekturasi
+
+CyberShield quyidagi komponentlardan iborat:
+
+- **Frontend**: React-based web interfeysi
+- **Backend**: Flask API serveri
+- **Skanerlar**: ZAP va Nmap xavfsizlik skanerlari
+- **AI tahlil**: Gemini AI tahlili
+- **Ma'lumotlar bazasi**: MongoDB (skanerlash tarixi uchun)
+- **Job queue**: Redis (asinxron vazifalar uchun)
+
+## Xavfsizlik Skaner Komponentlari
+
+- **ZAP (Zed Attack Proxy)**: Web zaifliklarni aniqlash uchun
+- **Nmap**: Port va servis aniqlash uchun
+- **Gemini AI**: Natijalarni tahlil qilish va tavsiyalar berish uchun
+
+## API Reference
+
+### Skanerlash API
+
+- `POST /api/scan/start` - Yangi skanerlashni boshlash
+- `GET /api/scan/status/{scan_id}` - Skanerlash statusini tekshirish
+- `GET /api/scan/{scan_id}` - Skanerlash tafsilotlarini olish
+- `GET /api/scan/{scan_id}/vulnerabilities` - Aniqlangan zaifliklarni olish
+- `POST /api/scan/{scan_id}/cancel` - Skanerlashni bekor qilish
+
+### Hisobot API
+
+- `GET /api/report/{report_id}` - Hisobotni olish
+- `GET /api/report/export/{report_id}?format=pdf` - Hisobotni eksport qilish (PDF)
+- `POST /api/report/generate/{report_id}` - Hisobotni yaratish
+- `GET /api/report/summary/{report_id}` - Hisobot qisqacha ma'lumotlarini olish
+
+## Kontakt
+
+Savollar va takliflar uchun: [your-email@example.com](mailto:your-email@example.com)
+
+## Litsenziya
+
+MIT License 
